@@ -1,0 +1,22 @@
+FROM python:latest
+
+# set environment variables
+ENV HOME="/root" \
+LANGUAGE="en_US.UTF-8" \
+LANG="en_US.UTF-8" \
+USERNAME="" \
+PASSWORD="" \
+BASE_PATH="/output" \
+# Log Levels: "Debug", "Info", "Error"
+LOG_LEVEL="Error"
+
+RUN apt-get update  \
+    && apt-get dist-upgrade -y \
+    && python -m pip install --upgrade pip
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY ./scripts /scripts
+RUN chmod -R 777 /scripts
+
+ENTRYPOINT ["python", "/scripts/export_neat_files.py"]
