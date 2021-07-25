@@ -203,7 +203,9 @@ def zip_folder(_base):
 
 
 def __main():
-    print("Start Export")
+    ts = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+    print(f'{ts} | Status: Export Started')
+    
     Path(BASE_EXPORT_PATH).mkdir(parents=True, exist_ok=True)
 
     with open(DATA_LOG, mode='w') as f:
@@ -215,6 +217,9 @@ def __main():
 
     if CREATE_ZIP == "TRUE":
         zip_folder(BASE_EXPORT_PATH)
+    
+    ts = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+    print(f'{ts} | Status: Export Completed')
 
 
 __main()
