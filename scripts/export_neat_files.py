@@ -149,14 +149,11 @@ def process_items_in_folder(_folder_id, _base):
                 print("item_parent_id : " + item_parent_id)
             if not item_download_url:
                 item_status = "Error"
-                _log_entry = {"failure_dt": datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
-                              "webid": item_id,
-                              "error": "Not able to export", "item_object": entity}
-                if LOG_LEVEL in ["Debug", "Info", "Error"]:
-                    print(_log_entry)
+                ts = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+                print(f'{ts} | Status: {item_status} | webid: {item_id} | Message: No Download URL')
             else:
                 item_status = "Exported"
-                download_file(item_download_url, item_export_full_path, _base, item_id)
+                download_file(item_download_url, item_export_full_path, _base, item_id, item_status)
 
             with open(DATA_LOG, mode='w') as f:
                 item_list.append({"item_id": item_id,
@@ -165,17 +162,16 @@ def process_items_in_folder(_folder_id, _base):
                     "neat_item_object": entity})
                 json.dump(item_list, f)
 
-def download_file(_download_url, _full_path, _base, _item_number):
+def download_file(_download_url, _full_path, _base, _item_number, _item_status):
     if LOG_LEVEL in ["Debug"]:
         print(_download_url)
         print(_full_path)
     Path(_base).mkdir(parents=True, exist_ok=True)
     open(_full_path, 'wb+').write(requests.get(_download_url, allow_redirects=True, verify=False).content)
-    _log_entry = {"export_dt": datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
-                  "webid": _item_number,
-                  "export_full_path": _full_path}
+
     if LOG_LEVEL in ["Debug", "Error"]:
-        print(_log_entry)
+        ts = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+        print(f'{ts} | Status: {_item_status} | webid: {_item_number} | export path: {_full_path}')
 
 
 def clean_filename(filename, whitelist=valid_filename_chars, replace=' '):
@@ -206,13 +202,15 @@ def zip_folder(_base):
 
 def __main():
     print("Start Export")
+    Path(BASE_EXPORT_PATH).mkdir(parents=True, exist_ok=True)
 
-    # Write the initial json object (list of dicts)
     with open(DATA_LOG, mode='w') as f:
         json.dump(item_list, f)
 
     neat_login()
+
     get_root_folder(BASE_EXPORT_PATH + "/neat")
+
     if CREATE_ZIP == "TRUE":
         zip_folder(BASE_EXPORT_PATH)
 
