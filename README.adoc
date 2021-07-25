@@ -1,0 +1,34 @@
+= Neat Bulk Export
+<kwitcom@gmail.com>
+v1.0, 2021-07-24
+
+I had a need to export all my files/scans from neat.com, and they did not have a bulk export option. It was starting to cost too much, and I was not using the service like I used to. So I created a quick set of Python Scripts to export all my scans as PDF as well as the metadata in json format.
+
+The scripts are build into a docker image to make it easier to use. You need to set up a mount for /output and need to pass in your username and password. I did not have any kind of SSO setup, so most likely that will not work.
+
+== Application Setup
+
+|===
+|Parameter |Function
+
+|`-v /output`
+|Location of exported file on disk
+
+|`-e USERNAME`
+|Neat.com username (Email Address)
+
+|`-e PASSWORD`
+|Neat.com Password
+
+|`-e LOG_LEVEL`
+|Default `Error` (Log Levels: "Debug", "Info", "Error")
+
+|`-e BASE_PATH`
+|Default `"/output"`
+|===
+
+== Versions
+* *07.24.21:* - Initial Release.
+
+= *Disclaimer*
+WARNING: The code within this repository comes with no guarantee, the use of this code is your responsibility. I take NO responsibility and/or liability for how you choose to use any of the source code available here. By using any of the files available in this repository, you understand that you are AGREEING TO USE AT YOUR OWN RISK. Once again, ALL files available here are for EDUCATION and/or RESEARCH purposes ONLY.

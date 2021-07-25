@@ -8,6 +8,9 @@ from datetime import datetime
 import unicodedata
 import string
 import os
+import math
+from zipfile import ZipFile
+from os.path import basename
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -23,6 +26,9 @@ USERNAME = os.getenv('USERNAME')
 PASSWORD = os.getenv('PASSWORD')
 BASE_EXPORT_PATH = os.getenv('BASE_PATH')
 LOG_LEVEL = os.getenv('LOG_LEVEL')
+CREATE_ZIP = os.getenv('CREATE_ZIP')
+page_size = 100
+item_list = []
 
 
 def neat_login():
@@ -95,46 +101,62 @@ def get_folder(_folder_id, _base):
 def process_items_in_folder(_folder_id, _base):
     if LOG_LEVEL in ["Debug"]:
         print("Folder ID : " + _folder_id)
-    get_item_payload = json.dumps(
-        {"filters": [{"parent_id": _folder_id}, {"type": "$all_item_types"}], "page": 1,
-         "page_size": "25", "sort_by": [["created_at", "desc"]], "utc_offset": -4})
-    get_item_response = requests.request("POST",
-                                         get_item_url,
-                                         headers=get_item_header,
-                                         data=get_item_payload,
-                                         verify=False)
-    entities = get_item_response.json()
+    current_page = 1
+    max_page = 1
+    while current_page <= max_page:
+        get_item_payload = json.dumps(
+            {"filters": [{"parent_id": _folder_id}, {"type": "$all_item_types"}], "page": current_page,
+             "page_size": page_size, "sort_by": [["created_at", "desc"]], "utc_offset": -4})
+        get_item_response = requests.request("POST",
+                                             get_item_url,
+                                             headers=get_item_header,
+                                             data=get_item_payload,
+                                             verify=False)
 
-    for entity in entities["entities"]:
-        item_id = entity["webid"]
-        item_name = entity["name"]
-        item_type = entity["type"]
-        item_description = entity["description"]
-        item_created_at = parse(entity["created_at"])
-        item_parent_id = entity["parent_id"]
-        item_download_url = entity["download_url"]
-        item_file_source = entity["file_source"]
-        if not item_name:
-            item_name = item_type + "_" + item_file_source + "_" + item_id
+        items = get_item_response.json()
+        total_items = items["pagination"]["total_records"]
+        max_page = math.ceil(total_items / page_size)
+        current_page += 1
 
-        item_export_file_name = clean_filename(item_name + "_" + item_created_at.strftime("%Y_%m_%d") + ".pdf")
-        item_export_full_path = _base + "/" + item_export_file_name
-        if LOG_LEVEL in ["Debug"]:
-            print("item_id : " + item_id)
-            print("item_type : " + item_type)
-            print("item_name : " + item_name)
-            print("item_description : " + item_description)
-            print("item_export_file_name : " + item_export_file_name)
-            print("item_export_full_path : " + item_export_full_path)
-            print("item_parent_id : " + item_parent_id)
-        if not item_download_url:
-            _log_entry = {"failure_dt": datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
-                          "webid": item_id,
-                          "error": "Not able to export", "item_object": entity}
-            if LOG_LEVEL in ["Debug", "Info", "Error"]:
-                print(_log_entry)
-        else:
-            download_file(item_download_url, item_export_full_path, _base, item_id)
+        entities = get_item_response.json()
+        for entity in entities["entities"]:
+            item_id = entity["webid"]
+            item_name = entity["name"]
+            item_type = entity["type"]
+            item_description = entity["description"]
+            item_created_at = parse(entity["created_at"])
+            item_parent_id = entity["parent_id"]
+            item_download_url = entity["download_url"]
+            item_file_source = entity["file_source"]
+            if not item_name:
+                item_name = item_type + "_" + item_file_source + "_" + item_id
+
+            item_export_file_name = clean_filename(item_name + "_" + item_created_at.strftime("%Y_%m_%d") + ".pdf")
+            item_export_full_path = _base + "/" + item_export_file_name
+            item_status = ""
+            if LOG_LEVEL in ["Debug"]:
+                print("item_id : " + item_id)
+                print("item_type : " + item_type)
+                print("item_name : " + item_name)
+                print("item_description : " + item_description)
+                print("item_export_file_name : " + item_export_file_name)
+                print("item_export_full_path : " + item_export_full_path)
+                print("item_parent_id : " + item_parent_id)
+            if not item_download_url:
+                item_status = "Error"
+                _log_entry = {"failure_dt": datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                              "webid": item_id,
+                              "error": "Not able to export", "item_object": entity}
+                if LOG_LEVEL in ["Debug", "Info", "Error"]:
+                    print(_log_entry)
+            else:
+                item_status = "Exported"
+                download_file(item_download_url, item_export_full_path, _base, item_id)
+
+            item_list.append({"item_id": item_id,
+                              "export_full_path": item_export_full_path,
+                              "Export_status": item_status,
+                              "neat_item_object": entity})
 
 
 def download_file(_download_url, _full_path, _base, _item_number):
@@ -163,10 +185,32 @@ def clean_filename(filename, whitelist=valid_filename_chars, replace=' '):
     return cleaned_filename[:char_limit]
 
 
+def zip_folder(_base):
+    print("Create Zip")
+    # create a ZipFile object
+    with ZipFile(_base + "/neat.zip", 'w') as zipObj:
+        # Iterate over all the files in directory
+        for folderName, subfolders, filenames in os.walk(_base + "/neat"):
+            for filename in filenames:
+                # create complete filepath of file in directory
+                filePath = os.path.join(folderName, filename)
+                # Add file to zip
+                zipObj.write(filePath, basename(filePath))
+
+
+def export_json(_base):
+    print("Create json file")
+    with open(_base + "/Data.json", "w") as write_file:
+        json.dump(item_list, write_file, indent=4, sort_keys=True)
+
+
 def __main():
     print("Start Export")
     neat_login()
-    get_root_folder(BASE_EXPORT_PATH)
+    get_root_folder(BASE_EXPORT_PATH + "/neat")
+    if CREATE_ZIP == "TRUE":
+        zip_folder(BASE_EXPORT_PATH)
+    export_json(BASE_EXPORT_PATH)
 
 
 __main()

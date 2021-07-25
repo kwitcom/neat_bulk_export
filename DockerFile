@@ -7,6 +7,7 @@ LANG="en_US.UTF-8" \
 USERNAME="" \
 PASSWORD="" \
 BASE_PATH="/output" \
+CREATE_ZIP="TRUE" \
 # Log Levels: "Debug", "Info", "Error"
 LOG_LEVEL="Error"
 
@@ -16,7 +17,7 @@ RUN apt-get update  \
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY ./scripts /scripts
+COPY ./scripts/export_neat_files.py /scripts/export_neat_files.py
 RUN chmod -R 777 /scripts
 
 ENTRYPOINT ["python", "/scripts/export_neat_files.py"]
