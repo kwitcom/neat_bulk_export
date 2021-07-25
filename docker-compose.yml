@@ -1,0 +1,10 @@
+version: '3.4'
+
+services:
+  neatbulkexport:
+    image: neatbulkexport
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+  environment:
+

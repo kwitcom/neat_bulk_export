@@ -1,0 +1,40 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "docker-build",
+			"label": "docker-build",
+			"platform": "python",
+			"dockerBuild": {
+				"tag": "neatbulkexport:latest",
+				"dockerfile": "${workspaceFolder}/Dockerfile",
+				"context": "${workspaceFolder}",
+				"pull": true
+			}
+		},
+		{
+			"type": "docker-run",
+			"label": "docker-run: debug",
+			"dependsOn": [
+				"docker-build"
+			],
+			"python": {
+				"file": "scripts/export_neat_files.py"
+			},
+			"dockerRun": {
+				"env": {
+					"USERNAME": "",
+					"PASSWORD": "",
+					"BASE_PATH": "/output",
+					"LOG_LEVEL": "Error"
+				},
+				"volumes": [
+					{
+						"containerPath": "/output",
+						"localPath": "/mnt/c/Data/output"
+					}
+				]
+			}
+		}
+	]
+}
