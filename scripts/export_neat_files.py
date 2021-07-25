@@ -135,7 +135,8 @@ def process_items_in_folder(_folder_id, _base):
             item_file_source = entity["file_source"]
             if not item_name:
                 item_name = item_type + "_" + item_file_source + "_" + item_id
-
+            else:
+                item_name = item_name + "_" + item_id[-5:]
             item_export_file_name = clean_filename(item_name + "_" + item_created_at.strftime("%Y_%m_%d") + ".pdf")
             item_export_full_path = _base + "/" + item_export_file_name
             item_status = ""
@@ -184,6 +185,7 @@ def clean_filename(filename, whitelist=valid_filename_chars, replace=' '):
 
     # keep only whitelisted chars
     cleaned_filename = ''.join(c for c in cleaned_filename if c in whitelist)
+    cleaned_filename = cleaned_filename.replace("__","_")
     return cleaned_filename[:char_limit]
 
 
