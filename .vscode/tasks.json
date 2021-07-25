@@ -22,16 +22,13 @@
 				"file": "scripts/export_neat_files.py"
 			},
 			"dockerRun": {
-				"env": {
-					"USERNAME": "",
-					"PASSWORD": "",
-					"BASE_PATH": "/output",
-					"LOG_LEVEL": "Error"
-				},
+				"envFiles": [
+					"./.env"
+				],
 				"volumes": [
 					{
 						"containerPath": "/output",
-						"localPath": "/mnt/c/Data/output"
+						"localPath": "${HOME}/data/output"
 					}
 				]
 			}

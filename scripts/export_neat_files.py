@@ -27,6 +27,7 @@ PASSWORD = os.getenv('PASSWORD')
 BASE_EXPORT_PATH = os.getenv('BASE_PATH')
 LOG_LEVEL = os.getenv('LOG_LEVEL')
 CREATE_ZIP = os.getenv('CREATE_ZIP')
+DATA_LOG = BASE_EXPORT_PATH + "/Data.json"
 page_size = 100
 item_list = []
 
@@ -53,6 +54,10 @@ def neat_login():
     authorization = 'OAuth ' + access_token
     account_number = json.dumps(jwt.decode(encoded_jwt,
                                            options={"verify_signature": False})["data"]["accountId"]).replace('"', '')
+
+    token_exp = jwt.decode(encoded_jwt, options={"verify_signature": False})["exp"]
+    if LOG_LEVEL in ["Debug", "Error"]:
+        print("Token Exp : " + datetime.utcfromtimestamp(token_exp).strftime('%Y-%m-%dT%H:%M:%SZ'))
 
     global get_item_header
     get_item_header = {'Authorization': authorization,
@@ -153,11 +158,12 @@ def process_items_in_folder(_folder_id, _base):
                 item_status = "Exported"
                 download_file(item_download_url, item_export_full_path, _base, item_id)
 
-            item_list.append({"item_id": item_id,
-                              "export_full_path": item_export_full_path,
-                              "Export_status": item_status,
-                              "neat_item_object": entity})
-
+            with open(DATA_LOG, mode='w') as f:
+                item_list.append({"item_id": item_id,
+                    "export_full_path": item_export_full_path,
+                    "Export_status": item_status,
+                    "neat_item_object": entity})
+                json.dump(item_list, f)
 
 def download_file(_download_url, _full_path, _base, _item_number):
     if LOG_LEVEL in ["Debug"]:
@@ -198,19 +204,17 @@ def zip_folder(_base):
                 zipObj.write(filePath, basename(filePath))
 
 
-def export_json(_base):
-    print("Create json file")
-    with open(_base + "/Data.json", "w") as write_file:
-        json.dump(item_list, write_file, indent=4, sort_keys=True)
-
-
 def __main():
     print("Start Export")
+
+    # Write the initial json object (list of dicts)
+    with open(DATA_LOG, mode='w') as f:
+        json.dump(item_list, f)
+
     neat_login()
     get_root_folder(BASE_EXPORT_PATH + "/neat")
     if CREATE_ZIP == "TRUE":
         zip_folder(BASE_EXPORT_PATH)
-    export_json(BASE_EXPORT_PATH)
 
 
 __main()
