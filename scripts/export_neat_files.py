@@ -9,6 +9,7 @@ import unicodedata
 import string
 import os
 import math
+import shutil
 from zipfile import ZipFile
 from os.path import basename
 
@@ -34,7 +35,10 @@ item_list = []
 
 def neat_login():
     if LOG_LEVEL in ["Debug", "Info", "Error"]:
-        print('UserName: ' + USERNAME)
+        ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        print(f'{ts} | Status: Login')
+        print(f'{ts} | Username: {USERNAME}')
+
     sign_in_payload = json.dumps({'username': USERNAME, 'password': PASSWORD, 'scope': 'JAWN'})
 
     sign_in_headers = {
@@ -57,7 +61,9 @@ def neat_login():
 
     token_exp = jwt.decode(encoded_jwt, options={"verify_signature": False})["exp"]
     if LOG_LEVEL in ["Debug", "Error"]:
-        print("Token Exp : " + datetime.utcfromtimestamp(token_exp).strftime('%Y-%m-%dT%H:%M:%SZ'))
+        ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        token_exp_format =  datetime.utcfromtimestamp(token_exp).strftime('%Y-%m-%dT%H:%M:%SZ')
+        print(f'{ts} | Token Exp: {token_exp_format}')        
 
     global get_item_header
     get_item_header = {'Authorization': authorization,
@@ -66,9 +72,11 @@ def neat_login():
                        'Content-Type': 'application/json;charset=UTF-8',
                        'Accept': 'application/json, text/plain, */*'}
     if LOG_LEVEL in ["Debug", "Info", "Error"]:
-        print("account_number : " + account_number)
+        ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        print(f'{ts} | account_number: {account_number}')        
     if LOG_LEVEL in ["Debug"]:
-        print("authorization : " + authorization)
+        ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        print(f'{ts} | authorization: {authorization}')         
 
 
 def get_root_folder(_base):
@@ -78,7 +86,9 @@ def get_root_folder(_base):
                                          data={},
                                          verify=False)
     if LOG_LEVEL in ["Debug"]:
-        print(get_root_response.json())
+        ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        print(f'{ts} | get_root_response: {get_root_response.json()}')         
+
 
     for folder in get_root_response.json()["rootFolder"]["folders"]:
         get_folder(folder["webid"], _base)
@@ -86,7 +96,8 @@ def get_root_folder(_base):
 
 def get_folder(_folder_id, _base):
     if LOG_LEVEL in ["Debug"]:
-        print("Folder ID : " + _folder_id)
+        ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        print(f'{ts} | Folder ID: {_folder_id}')            
     get_folder_response = requests.request("POST",
                                            get_folder_url,
                                            headers=get_item_header,
@@ -95,8 +106,11 @@ def get_folder(_folder_id, _base):
     folder = get_folder_response.json()["folders"][0]
     _base = _base + "/" + clean_filename(folder["name"])
     if LOG_LEVEL in ["Debug"]:
-        print("Folder Name : " + folder["name"])
-        print("Path : " + _base)
+        ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        folder_name = folder["name"]
+        print(f'{ts} | Folder Name: {folder_name}')            
+        print(f'{ts} | Path: {_base}')
+
     process_items_in_folder(_folder_id, _base)
 
     for folder in folder["folders"]:
@@ -105,7 +119,8 @@ def get_folder(_folder_id, _base):
 
 def process_items_in_folder(_folder_id, _base):
     if LOG_LEVEL in ["Debug"]:
-        print("Folder ID : " + _folder_id)
+        ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        print(f'{ts} | Folder ID: {_folder_id}')
     current_page = 1
     max_page = 1
     while current_page <= max_page:
@@ -141,17 +156,20 @@ def process_items_in_folder(_folder_id, _base):
             item_export_full_path = _base + "/" + item_export_file_name
             item_status = ""
             if LOG_LEVEL in ["Debug"]:
-                print("item_id : " + item_id)
-                print("item_type : " + item_type)
-                print("item_name : " + item_name)
-                print("item_description : " + item_description)
-                print("item_export_file_name : " + item_export_file_name)
-                print("item_export_full_path : " + item_export_full_path)
-                print("item_parent_id : " + item_parent_id)
+                ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+                print(f'{ts} | item_id: {item_id}')
+                print(f'{ts} | item_type: {item_type}')
+                print(f'{ts} | item_name: {item_name}')
+                print(f'{ts} | item_description: {item_description}')
+                print(f'{ts} | item_export_file_name: {item_export_file_name}')
+                print(f'{ts} | item_export_full_path: {item_export_full_path}')
+                print(f'{ts} | item_parent_id: {item_parent_id}')
+
             if not item_download_url:
                 item_status = "Error"
-                ts = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+                ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
                 print(f'{ts} | Status: {item_status} | webid: {item_id} | Message: No Download URL')
+
             else:
                 item_status = "Exported"
                 download_file(item_download_url, item_export_full_path, _base, item_id, item_status)
@@ -165,13 +183,15 @@ def process_items_in_folder(_folder_id, _base):
 
 def download_file(_download_url, _full_path, _base, _item_number, _item_status):
     if LOG_LEVEL in ["Debug"]:
-        print(_download_url)
-        print(_full_path)
+        ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        print(f'{ts} | _download_url: {_download_url}')
+        print(f'{ts} | _full_path: {_full_path}')
+
     Path(_base).mkdir(parents=True, exist_ok=True)
     open(_full_path, 'wb+').write(requests.get(_download_url, allow_redirects=True, verify=False).content)
 
     if LOG_LEVEL in ["Debug", "Error"]:
-        ts = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+        ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
         print(f'{ts} | Status: {_item_status} | webid: {_item_number} | export path: {_full_path}')
 
 
@@ -190,21 +210,20 @@ def clean_filename(filename, whitelist=valid_filename_chars, replace=' '):
 
 
 def zip_folder(_base):
-    print("Create Zip")
-    # create a ZipFile object
-    with ZipFile(_base + "/neat.zip", 'w') as zipObj:
-        # Iterate over all the files in directory
-        for folderName, subfolders, filenames in os.walk(_base + "/neat"):
-            for filename in filenames:
-                # create complete filepath of file in directory
-                filePath = os.path.join(folderName, filename)
-                # Add file to zip
-                zipObj.write(filePath, basename(filePath))
+    ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+    print(f'{ts} | Status: Start Creating Zip File')
+
+    shutil.make_archive(_base + "/neat", 'zip', _base + "/neat")
+    # TODO: Add json file to zip
+
+    ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+    print(f'{ts} | Status: Completed Creating Zip File')
 
 
 def __main():
-    ts = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+    ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
     print(f'{ts} | Status: Export Started')
+    print(f'{ts} | Export Location: {BASE_EXPORT_PATH}')
     
     Path(BASE_EXPORT_PATH).mkdir(parents=True, exist_ok=True)
 
@@ -218,7 +237,7 @@ def __main():
     if CREATE_ZIP == "TRUE":
         zip_folder(BASE_EXPORT_PATH)
     
-    ts = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+    ts = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
     print(f'{ts} | Status: Export Completed')
 
 
