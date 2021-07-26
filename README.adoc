@@ -11,27 +11,54 @@ The scripts are build into a docker image to make it easier to use. You need to 
 |===
 |Parameter |Function
 
-|`-v /output`
-|Location of exported file on disk
-
-|`-e USERNAME`
+|`USERNAME`
 |Neat.com username (Email Address)
 
-|`-e PASSWORD`
+|`PASSWORD`
 |Neat.com Password
 
-|`-e LOG_LEVEL`
+|`LOG_LEVEL`
 |Default `Error` (Log Levels: "Debug", "Info", "Error")
 
-|`-e BASE_PATH`
+|`BASE_PATH`
 |Default `"/output"`
 |===
+[sidebar]
+..env File
+--
+[,ini]
+----
+USERNAME=xxxxxxxxx@gmail.com
+PASSWORD=xxxxxxxx
+BASE_PATH=/output
+LOG_LEVEL=Error
+----
+--
 
-== Versions
-* *07.24.21:* - Initial Release.
+[sidebar]
+.tasks.json
+--
+Following is used to use the .env file and also mount volume for location to export files outside of image.
 
-= *Disclaimer*
+[,json]
+----
+        "dockerRun": {
+            "envFiles": [
+                "./.env"
+            ],
+            "volumes": [
+                {
+                    "containerPath": "/output",
+                    "localPath": "${HOME}/data/output"
+                }
+            ]
+        }
+----        
+--
+
+
+=== *Disclaimer*
 WARNING: The code within this repository comes with no guarantee, the use of this code is your responsibility. I take NO responsibility and/or liability for how you choose to use any of the source code available here. By using any of the files available in this repository, you understand that you are AGREEING TO USE AT YOUR OWN RISK. Once again, ALL files available here are for EDUCATION and/or RESEARCH purposes ONLY.
 
-= *Donate*
-https://www.paypal.com/biz/fund?id=LWFXKBFUMQRLN[Donate]
+
+https://www.paypal.com/biz/fund?id=LWFXKBFUMQRLN[Please Donate]
